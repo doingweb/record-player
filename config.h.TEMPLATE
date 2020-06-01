@@ -1,0 +1,7 @@
+// WiFi
+#define SSID ""
+#define PASSWORD ""
+
+// Spotify
+#define BEARER_TOKEN ""
+#define DEVICE_ID ""

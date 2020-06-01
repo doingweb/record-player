@@ -1,20 +1,41 @@
-#include <Arduino.h>
-
-#define LED_PIN D5
+#include "nfc.h"
+#include "recordPlayer.h"
+#include "spotify.h"
+#include "wifi.h"
 
 void setup() {
-  Serial.begin(115200);
+	Serial.begin(115200);
+  nfcInit();
 
-  pinMode(D5, OUTPUT);
+  startWifi();
+
+  nfcDumpVersionToSerial();
+
+	Serial.println(F("Ready to play some records! 🔊"));
 }
 
 void loop() {
-  digitalWrite(LED_PIN, HIGH);
-  Serial.println("blinky");
+	if (!isNewCardPresent()) {
+		return;
+	}
 
-  delay(1000);
+	if (!readCard()) {
+		return;
+	}
 
-  digitalWrite(LED_PIN, LOW);
+	// nfcDumpCardInfoToSerial();
 
-  delay(1000);
+  String uid = getCardUid();
+  Serial.println(uid);
+
+  String albumId = getAlbumId();
+
+  if (albumId != "") {
+    playAlbum(albumId);
+  } else {
+    signalUnrecognizedAlbum();
+  }
+
+  // Keeps from reading the same card over and over again
+  haltNfc();
 }
