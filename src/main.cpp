@@ -1,3 +1,5 @@
+#include <FS.h>
+#include "http-server.h"
 #include "nfc.h"
 #include "recordPlayer.h"
 #include "spotify.h"
@@ -9,6 +11,10 @@ void setup() {
 
   startWifi();
 
+  SPIFFS.begin();
+
+  startHttpServer();
+
   nfcDumpVersionToSerial();
 
 	Serial.println(F("Ready to play some records! 🔊"));
@@ -16,6 +22,8 @@ void setup() {
 
 void loop() {
   updateDns();
+  handleHttpClient();
+
 	if (!isNewCardPresent()) {
 		return;
 	}
