@@ -15,6 +15,7 @@ void setup() {
 }
 
 void loop() {
+  updateDns();
 	if (!isNewCardPresent()) {
 		return;
 	}

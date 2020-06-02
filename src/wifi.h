@@ -4,3 +4,4 @@
 #include "../config.h"
 
 void startWifi();
+void updateDns();
