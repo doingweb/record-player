@@ -19,13 +19,22 @@
         <h1>Let's play some records 🔊</h1>
         <b-img center rounded src="https://media.giphy.com/media/OmcqoK1Zr5P0c/giphy.gif" class="m-4 shadow"></b-img>
         <p>Everything is going great.</p>
+        <p>Uptime: {{stats.millis}} milliseconds</p>
       </b-container>
     </div>
 
     <script>
       window.app = new Vue({
         el: '#app',
-        data: {}
+        data() {
+          return {
+            stats: {}
+          };
+        },
+        async mounted() {
+          const response = await fetch('/stats');
+          this.stats = await response.json();
+        }
       })
     </script>
   </body>

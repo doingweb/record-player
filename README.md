@@ -6,11 +6,15 @@ The magic inside the box that plays records without taking them out.
 TODO
 ----
 
-- [ ] Proper OAuth flow instead of relying on the temporary bearer token
+- [X] Better libraries for managing HTTP requests and JSON?
+- [X] Proper OAuth flow instead of relying on the temporary bearer token
 - [ ] Read album ID from NFC tag
+- [ ] Refresh access token and retry if it's expired
 - [ ] If it's already playing, don't restart
-- [ ] Better library for managing HTTP and JSON?
-- [ ] LED to indicate errors?
+- [ ] Show errors via web
+  - [ ] Last command/response from Spotify (+ date/time/etc.)
 - [ ] Move more error handling to `recordPlayer`
   - [ ] WiFi connection
   - [ ] TLS
+- [ ] Support changing devices via web (dropdown?)
+- [ ] More web-based configuration in general?

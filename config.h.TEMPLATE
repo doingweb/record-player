@@ -4,5 +4,6 @@
 #define HOSTNAME ""
 
 // Spotify
-#define BEARER_TOKEN ""
+#define CLIENT_ID ""
+#define CLIENT_SECRET ""
 #define DEVICE_ID ""
