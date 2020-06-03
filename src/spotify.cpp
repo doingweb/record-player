@@ -12,26 +12,34 @@ void updateTokensViaAuthCode();
 void updateTokensViaRefresh();
 String requestApiTokens(String payload);
 void extractTokens(String);
-void sendRequest(String, String);
-void sendRequest(String, String, String);
+int sendRequest(String, String);
+int sendRequest(String, String, String);
 
 // OAuth stuff
 String authorizationCode = ""; // TODO: Write to a file?
 String accessToken = "";
 String refreshToken = "";
-int oauthXssState;
+int oauthXssState = 0;
 
 void playAlbum(String id) {
-  Serial.println("Playing " + id);
+  Serial.println("Playing album " + id + ".");
 
   const String path = (String)"/v1/me/player/play?device_id=" + DEVICE_ID;
   String payload = "{\"context_uri\":\"spotify:album:" + id + "\"}";
 
-  sendRequest("PUT", path, payload);
+  int status = sendRequest("PUT", path, payload);
+
+  if (status == HTTP_CODE_UNAUTHORIZED || status == HTTP_CODE_BAD_REQUEST) {
+    Serial.println("Access token did not work. Getting a new one and trying again.");
+    updateAccessToken();
+    status = sendRequest("PUT", path, payload);
+  }
+
+  // Log if it happens again?
 }
 
 String getAuthorizeUrl() {
-  oauthXssState = random(10000);
+  oauthXssState = random(1, 10000);
   return (String)"https://accounts.spotify.com/authorize?client_id=" + CLIENT_ID + "&response_type=code&redirect_uri=" + encodedRedirectUri() + "&scope=user-read-playback-state%20user-modify-playback-state&state=" + String(oauthXssState);
 }
 
@@ -41,18 +49,18 @@ String encodedRedirectUri() {
 
 void updateAccessToken() {
   if (authorizationCode == "" && refreshToken == "") {
-    Serial.println("Can't update access tokens because we lack auth code or refresh token");
+    Serial.println("Can't update access tokens because we lack auth code or refresh token.");
     return;
   }
 
   if (refreshToken != "") {
-    Serial.println("Updating access tokens via a refresh");
+    Serial.println("Updating access tokens via a refresh.");
     updateTokensViaRefresh();
     return;
   }
 
   if (authorizationCode != "") {
-    Serial.println("Updating access tokens via auth code");
+    Serial.println("Updating access tokens via auth code.");
     updateTokensViaAuthCode();
     return;
   }
@@ -96,11 +104,11 @@ void extractTokens(String json) {
   }
 }
 
-void sendRequest(String method, String path) {
-  sendRequest(method, path, "");
+int sendRequest(String method, String path) {
+  return sendRequest(method, path, "");
 }
 
-void sendRequest(String method, String path, String payload) {
+int sendRequest(String method, String path, String payload) {
   HTTPClient http;
   WiFiClientSecure client = getClient();
 
@@ -121,10 +129,9 @@ void sendRequest(String method, String path, String payload) {
   String response = http.getString();
   Serial.println(response);
 
-  // TODO: Refresh access token and retry if it's expired
-  // if (httpResponseCode == HTTP_CODE_UNAUTHORIZED) {}
-
   http.end();
+
+  return httpResponseCode;
 }
 
 WiFiClientSecure getClient() {
