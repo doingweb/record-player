@@ -1,4 +1,9 @@
+#include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
+#include "logger.h"
 #include "spotify.h"
+#include "../config.h"
 
 // CN: *.spotify.com
 const char certSha1Fingerprint[] PROGMEM = "AB BC 7C 9B 7A D8 5D 98 8B B2 72 A4 4C 13 47 9A 00 2F 70 B5";
@@ -23,7 +28,7 @@ int oauthXssState = 0;
 time_t accessTokenExpiration = 0;
 
 void playAlbum(String id) {
-  Serial.println("Playing album " + id + ".");
+  logger::log("Playing album " + id + ".");
 
   const String path = (String)"/v1/me/player/play?device_id=" + DEVICE_ID;
   String payload = "{\"context_uri\":\"spotify:album:" + id + "\"}";
@@ -31,7 +36,7 @@ void playAlbum(String id) {
   int status = sendRequest("PUT", path, payload);
 
   if (status == HTTP_CODE_UNAUTHORIZED || status == HTTP_CODE_BAD_REQUEST) {
-    Serial.println("Access token did not work. Getting a new one and trying again.");
+    logger::log("Access token did not work. Getting a new one and trying again.");
     refreshAccessToken();
     status = sendRequest("PUT", path, payload);
   }
@@ -41,7 +46,9 @@ void playAlbum(String id) {
 
 String getAuthorizeUrl() {
   oauthXssState = random(1, 10000);
-  return (String)"https://accounts.spotify.com/authorize?client_id=" + CLIENT_ID + "&response_type=code&redirect_uri=" + encodedRedirectUri() + "&scope=user-read-playback-state%20user-modify-playback-state&state=" + String(oauthXssState);
+  return String("https://accounts.spotify.com/authorize?client_id=") + CLIENT_ID +
+    "&response_type=code&redirect_uri=" + encodedRedirectUri() +
+    "&scope=user-read-playback-state%20user-modify-playback-state&state=" + oauthXssState;
 }
 
 void receiveAuthCode(String code, String state) {
@@ -66,7 +73,7 @@ void maintainAccessToken() {
 
   time_t currentTime = time(nullptr);
   if (currentTime > accessTokenExpiration) {
-    Serial.println("Access token expired! Refreshing...");
+    logger::log("Access token expired! Refreshing...");
     accessTokenExpiration = 0;
     refreshAccessToken();
   }
@@ -78,11 +85,11 @@ String encodedRedirectUri() {
 
 void updateTokensViaAuthCode() {
   if (authorizationCode.isEmpty()) {
-    Serial.println("Can't get access token: No auth code.");
+    logger::log("Can't get access token: No auth code.");
     return;
   }
 
-  Serial.println("Updating access tokens using auth code: " + authorizationCode);
+  logger::log("Updating access tokens using auth code: " + authorizationCode);
 
   String payload = "grant_type=authorization_code&code=" + authorizationCode + "&redirect_uri=" + encodedRedirectUri();
   extractTokens(requestApiTokens(payload));
@@ -90,11 +97,11 @@ void updateTokensViaAuthCode() {
 
 void refreshAccessToken() {
   if (refreshToken.isEmpty()) {
-    Serial.println("Can't refresh access token: No refresh token.");
+    logger::log("Can't refresh access token: No refresh token.");
     return;
   }
 
-  Serial.println("Refreshing access token using refresh token: " + refreshToken);
+  logger::log("Refreshing access token using refresh token: " + refreshToken);
 
   String payload = "grant_type=refresh_token&refresh_token=" + refreshToken;
   extractTokens(requestApiTokens(payload));
@@ -122,11 +129,11 @@ void extractTokens(String json) {
   deserializeJson(doc, json);
 
   if (doc.containsKey("error")) {
-    Serial.println("Error extracting tokens: " + json);
+    logger::log("Error extracting tokens: " + json);
     return;
   }
 
-  Serial.println("Received JSON from token API: " + json);
+  logger::log("Received JSON from token API: " + json);
 
   accessToken = doc["access_token"].as<String>();
 
@@ -144,7 +151,7 @@ int sendRequest(String method, String path) {
 
 int sendRequest(String method, String path, String payload) {
   if (accessToken.isEmpty()) {
-    Serial.println("Cancelling request: No access token set.");
+    logger::log("Cancelling request: No access token set.");
     return -1;
   }
 
@@ -164,9 +171,9 @@ int sendRequest(String method, String path, String payload) {
   int httpResponseCode = http.sendRequest(method.c_str(), payload);
 
   // Barf it out for debugging purposes
-  Serial.println(httpResponseCode);
+  logger::log(String(httpResponseCode));
   String response = http.getString();
-  Serial.println(response);
+  logger::log(response);
 
   http.end();
 

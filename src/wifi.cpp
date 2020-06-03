@@ -1,4 +1,9 @@
+#include <ESP8266mDNS.h>
+#include <ESP8266WiFi.h>
+#include "Arduino.h"
+#include "logger.h"
 #include "wifi.h"
+#include "../config.h"
 
 void startWifi() {
   WiFi.mode(WIFI_STA);
@@ -14,11 +19,11 @@ void startWifi() {
   }
 
   Serial.println("");
-  Serial.println((String)"Connected to " + SSID);
-  Serial.println((String)"IP address: " + WiFi.localIP().toString());
+  logger::log("Connected to " + String(SSID));
+  logger::log("IP address: " + WiFi.localIP().toString());
 
   if (MDNS.begin(HOSTNAME)) {
-    Serial.println("mDNS responder started.");
+    logger::log("mDNS responder started.");
   }
 }
 

@@ -1,7 +1,7 @@
 #include <FS.h>
 #include "http-server.h"
+#include "logger.h"
 #include "nfc.h"
-#include "recordPlayer.h"
 #include "spotify.h"
 #include "wifi.h"
 
@@ -17,7 +17,7 @@ void setup() {
 
   nfcDumpVersionToSerial();
 
-	Serial.println(F("Ready to play some records! 🔊"));
+	logger::log(F("Ready to play some records! 🔊"));
 }
 
 void loop() {
@@ -36,14 +36,14 @@ void loop() {
 	// nfcDumpCardInfoToSerial();
 
   String uid = getCardUid();
-  Serial.println(uid);
+  logger::log(uid);
 
   String albumId = getAlbumId();
 
   if (albumId != "") {
     playAlbum(albumId);
   } else {
-    signalUnrecognizedAlbum();
+    logger::log("Unrecognized album.");
   }
 
   // Keeps from reading the same card over and over again
