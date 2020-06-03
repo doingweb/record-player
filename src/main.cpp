@@ -23,6 +23,7 @@ void setup() {
 void loop() {
   updateDns();
   handleHttpClient();
+  maintainAccessToken();
 
 	if (!isNewCardPresent()) {
 		return;

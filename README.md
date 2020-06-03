@@ -8,8 +8,8 @@ TODO
 
 - [X] Better libraries for managing HTTP requests and JSON?
 - [X] Proper OAuth flow instead of relying on the temporary bearer token
+- [X] Refresh access token and retry if it's expired
 - [ ] Read album ID from NFC tag
-- [ ] Refresh access token and retry if it's expired
 - [ ] If it's already playing, don't restart
 - [ ] Show errors via web
   - [ ] Last command/response from Spotify (+ date/time/etc.)

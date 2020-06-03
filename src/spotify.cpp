@@ -9,17 +9,18 @@ const char certSha1Fingerprint[] PROGMEM = "AB BC 7C 9B 7A D8 5D 98 8B B2 72 A4 
 WiFiClientSecure getClient();
 String encodedRedirectUri();
 void updateTokensViaAuthCode();
-void updateTokensViaRefresh();
+void refreshAccessToken();
 String requestApiTokens(String payload);
 void extractTokens(String);
 int sendRequest(String, String);
 int sendRequest(String, String, String);
 
 // OAuth stuff
-String authorizationCode = ""; // TODO: Write to a file?
+String authorizationCode = "";
 String accessToken = "";
-String refreshToken = "";
+String refreshToken = ""; // TODO: Write to a file?
 int oauthXssState = 0;
+time_t accessTokenExpiration = 0;
 
 void playAlbum(String id) {
   Serial.println("Playing album " + id + ".");
@@ -31,7 +32,7 @@ void playAlbum(String id) {
 
   if (status == HTTP_CODE_UNAUTHORIZED || status == HTTP_CODE_BAD_REQUEST) {
     Serial.println("Access token did not work. Getting a new one and trying again.");
-    updateAccessToken();
+    refreshAccessToken();
     status = sendRequest("PUT", path, payload);
   }
 
@@ -43,35 +44,58 @@ String getAuthorizeUrl() {
   return (String)"https://accounts.spotify.com/authorize?client_id=" + CLIENT_ID + "&response_type=code&redirect_uri=" + encodedRedirectUri() + "&scope=user-read-playback-state%20user-modify-playback-state&state=" + String(oauthXssState);
 }
 
+void receiveAuthCode(String code, String state) {
+  if (state.toInt() != oauthXssState) {
+    return;
+  }
+  oauthXssState = 0; // Use it once and dispose
+
+  if (code.isEmpty()) {
+    return;
+  }
+
+  authorizationCode = code;
+
+  updateTokensViaAuthCode();
+}
+
+void maintainAccessToken() {
+  if (accessTokenExpiration == 0) {
+    return;
+  }
+
+  time_t currentTime = time(nullptr);
+  if (currentTime > accessTokenExpiration) {
+    Serial.println("Access token expired! Refreshing...");
+    accessTokenExpiration = 0;
+    refreshAccessToken();
+  }
+}
+
 String encodedRedirectUri() {
   return (String)"http%3A%2F%2F" + HOSTNAME + ".local%2Fauth-callback";
 }
 
-void updateAccessToken() {
-  if (authorizationCode == "" && refreshToken == "") {
-    Serial.println("Can't update access tokens because we lack auth code or refresh token.");
-    return;
-  }
-
-  if (refreshToken != "") {
-    Serial.println("Updating access tokens via a refresh.");
-    updateTokensViaRefresh();
-    return;
-  }
-
-  if (authorizationCode != "") {
-    Serial.println("Updating access tokens via auth code.");
-    updateTokensViaAuthCode();
-    return;
-  }
-}
-
 void updateTokensViaAuthCode() {
+  if (authorizationCode.isEmpty()) {
+    Serial.println("Can't get access token: No auth code.");
+    return;
+  }
+
+  Serial.println("Updating access tokens using auth code: " + authorizationCode);
+
   String payload = "grant_type=authorization_code&code=" + authorizationCode + "&redirect_uri=" + encodedRedirectUri();
   extractTokens(requestApiTokens(payload));
 }
 
-void updateTokensViaRefresh() {
+void refreshAccessToken() {
+  if (refreshToken.isEmpty()) {
+    Serial.println("Can't refresh access token: No refresh token.");
+    return;
+  }
+
+  Serial.println("Refreshing access token using refresh token: " + refreshToken);
+
   String payload = "grant_type=refresh_token&refresh_token=" + refreshToken;
   extractTokens(requestApiTokens(payload));
 }
@@ -97,11 +121,21 @@ void extractTokens(String json) {
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, json);
 
+  if (doc.containsKey("error")) {
+    Serial.println("Error extracting tokens: " + json);
+    return;
+  }
+
+  Serial.println("Received JSON from token API: " + json);
+
   accessToken = doc["access_token"].as<String>();
 
-  if (doc["refresh_token"] != "") {
+  if (!doc["refresh_token"].isNull()) {
     refreshToken = doc["refresh_token"].as<String>();
   }
+
+  int expiresIn = doc["expires_in"];
+  accessTokenExpiration = time(nullptr) + expiresIn;
 }
 
 int sendRequest(String method, String path) {
@@ -109,6 +143,11 @@ int sendRequest(String method, String path) {
 }
 
 int sendRequest(String method, String path, String payload) {
+  if (accessToken.isEmpty()) {
+    Serial.println("Cancelling request: No access token set.");
+    return -1;
+  }
+
   HTTPClient http;
   WiFiClientSecure client = getClient();
 

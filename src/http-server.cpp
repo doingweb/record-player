@@ -44,30 +44,21 @@ void handleAuthCallback() {
   String code = server.arg("code");
   String state = server.arg("state");
 
-  if (state.toInt() != oauthXssState) {
-    return;
-  }
-
-  if (code == "") {
-    return;
-  }
-
-  authorizationCode = code;
-
-  updateAccessToken();
+  receiveAuthCode(code, state);
 
   redirectTo("/");
 }
 
 void handleConfig() {
   // Count of `doc` assignments below, plus space for copying each thing
-  const size_t capacity = JSON_OBJECT_SIZE(3) + authorizationCode.length() + accessToken.length() + refreshToken.length() + sizeof(DEVICE_ID);
+  const size_t capacity = JSON_OBJECT_SIZE(5) + authorizationCode.length() + accessToken.length() + refreshToken.length() + sizeof(accessTokenExpiration) + sizeof(DEVICE_ID);
   DynamicJsonDocument doc(capacity);
   String json;
 
   doc["authorizationCode"] = authorizationCode;
   doc["accessToken"] = accessToken;
   doc["refreshToken"] = refreshToken;
+  doc["accessTokenExpiration"] = accessTokenExpiration;
   doc["deviceId"] = DEVICE_ID;
 
   serializeJson(doc, json);
