@@ -59,7 +59,7 @@
             return !!this.config.accessToken;
           },
           uptime() {
-            return moment.duration(this.stats.millis, 'ms');
+            return moment.duration(this.stats.time, 'seconds');
           },
         },
         methods: {

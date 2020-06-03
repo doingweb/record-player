@@ -67,11 +67,12 @@ void handleConfig() {
 }
 
 void handleStats() {
-  const size_t capacity = JSON_OBJECT_SIZE(1); // Count of `doc` assignments below
+  const size_t capacity = JSON_OBJECT_SIZE(2) + sizeof(long) + sizeof(time_t);
   DynamicJsonDocument doc(capacity);
   String json;
 
   doc["millis"] = millis();
+  doc["time"] = time(nullptr);
 
   serializeJson(doc, json);
   server.send(200, "application/json", json);
