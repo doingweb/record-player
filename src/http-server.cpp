@@ -2,6 +2,7 @@
 #include <FS.h>
 #include "http-server.h"
 #include "spotify.h"
+#include "../config.h"
 
 ESP8266WebServer server(80);
 
@@ -51,10 +52,15 @@ void handleAuthCallback() {
 
 void handleConfig() {
   // Count of `doc` assignments below, plus space for copying each thing
-  const size_t capacity = JSON_OBJECT_SIZE(5) + authorizationCode.length() + accessToken.length() + refreshToken.length() + sizeof(accessTokenExpiration) + sizeof(DEVICE_ID);
+  const size_t capacity = JSON_OBJECT_SIZE(7) +
+    sizeof(CLIENT_ID) + sizeof(CLIENT_SECRET) +
+    authorizationCode.length() + accessToken.length() + refreshToken.length() +
+    sizeof(accessTokenExpiration) + sizeof(DEVICE_ID);
   DynamicJsonDocument doc(capacity);
   String json;
 
+  doc["clientId"] = CLIENT_ID;
+  doc["clientSecret"] = CLIENT_SECRET;
   doc["authorizationCode"] = authorizationCode;
   doc["accessToken"] = accessToken;
   doc["refreshToken"] = refreshToken;
