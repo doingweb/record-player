@@ -12,14 +12,26 @@
 
     <script src="https://unpkg.com/vue@latest/dist/vue.js"></script>
     <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <script src="https://unpkg.com/moment/min/moment.min.js"></script>
+    <script src="https://unpkg.com/moment-duration-format@2.3.2/lib/moment-duration-format.js"></script>
   </head>
   <body class="bg-dark text-light">
     <div id="app">
       <b-container class="p-4">
         <h1>Let's play some records 🔊</h1>
         <b-img center rounded src="https://media.giphy.com/media/OmcqoK1Zr5P0c/giphy.gif" class="m-4 shadow"></b-img>
-        <p>Everything is going great.</p>
-        <p>Uptime: {{stats.millis}} milliseconds</p>
+
+        <p v-if="shouldBeWorking">Everything is going great!</p>
+
+        <b-alert v-if="isLoaded && !config.accessToken" show variant="warning">
+          <h2 class="alert-heading">Missing access token</h2>
+          <p>We couldn't get an access token from Spotify for some reason. Please re-authorize.</p>
+          <div class="text-right">
+            <b-button href="/auth" variant="primary">Authorize</b-button>
+          </div>
+        </b-alert>
+
+        <p>Uptime: {{uptime.format('dd[d] HH:mm:ss', { stopTrim: 'H' })}}</p>
       </b-container>
     </div>
 
@@ -28,12 +40,37 @@
         el: '#app',
         data() {
           return {
-            stats: {}
+            config: {},
+            isLoaded: false,
+            stats: {},
           };
         },
-        async mounted() {
-          const response = await fetch('/stats');
-          this.stats = await response.json();
+        async created() {
+          await Promise.all([
+            this.updateConfig(),
+            this.updateStats(),
+          ]);
+          this.isLoaded = true;
+
+          setInterval(this.updateStats, 1000);
+        },
+        computed: {
+          shouldBeWorking() {
+            return !!this.config.accessToken;
+          },
+          uptime() {
+            return moment.duration(this.stats.millis, 'ms');
+          },
+        },
+        methods: {
+          async updateConfig() {
+            const response = await fetch('/config');
+            this.config = await response.json();
+          },
+          async updateStats() {
+            const response = await fetch('/stats');
+            this.stats = await response.json();
+          },
         }
       })
     </script>
