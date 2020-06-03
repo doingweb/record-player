@@ -7,19 +7,18 @@ void startWifi() {
   Serial.println("");
 
   // Wait for connection
+  Serial.print("Connecting...");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
 
   Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(SSID);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println((String)"Connected to " + SSID);
+  Serial.println((String)"IP address: " + WiFi.localIP().toString());
 
   if (MDNS.begin(HOSTNAME)) {
-    Serial.println("mDNS responder started");
+    Serial.println("mDNS responder started.");
   }
 }
 
