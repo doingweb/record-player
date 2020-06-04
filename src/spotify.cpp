@@ -114,9 +114,11 @@ String requestApiTokens(String payload) {
   http.begin(client, "https://accounts.spotify.com/api/token");
   http.setAuthorization(CLIENT_ID, CLIENT_SECRET);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  http.POST(payload);
+  int httpResponseCode = http.POST(payload);
   String response = http.getString();
   http.end();
+
+  logger::log("Token API HTTP status: " + String(httpResponseCode, DEC));
 
   return response;
 }
@@ -135,13 +137,22 @@ void extractTokens(String json) {
 
   logger::log("Received JSON from token API: " + json);
 
-  accessToken = doc["access_token"].as<String>();
+  accessToken = doc["access_token"].isNull() ? "" : doc["access_token"].as<String>();
 
   if (!doc["refresh_token"].isNull()) {
     refreshToken = doc["refresh_token"].as<String>();
   }
 
   int expiresIn = doc["expires_in"];
+
+  if (expiresIn == 0) {
+    logger::log("No token expiration: Probably something really wrong. Throwing out tokens and starting over.");
+    accessToken = "";
+    refreshToken = "";
+    accessTokenExpiration = 0;
+    return;
+  }
+
   accessTokenExpiration = time(nullptr) + expiresIn;
 }
 
@@ -171,7 +182,7 @@ int sendRequest(String method, String path, String payload) {
   int httpResponseCode = http.sendRequest(method.c_str(), payload);
 
   // Barf it out for debugging purposes
-  logger::log(String(httpResponseCode));
+  logger::log(String(httpResponseCode, DEC));
   String response = http.getString();
   logger::log(response);
 
