@@ -14,12 +14,13 @@
     <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
     <script src="https://unpkg.com/moment/min/moment.min.js"></script>
     <script src="https://unpkg.com/moment-duration-format@2.3.2/lib/moment-duration-format.js"></script>
+    <script src="https://unpkg.com/vuetrend@0.3.4/dist/vue-trend.js"></script>
   </head>
   <body class="bg-dark text-light">
     <div id="app">
       <b-container class="p-4">
         <h1>Let's play some records 🔊</h1>
-        <b-img center rounded src="https://media.giphy.com/media/OmcqoK1Zr5P0c/giphy.gif" class="m-4 shadow"></b-img>
+        <b-img center rounded src="https://media.giphy.com/media/OmcqoK1Zr5P0c/giphy.gif" fluid class="my-4 shadow"></b-img>
 
         <p v-if="shouldBeWorking">Everything is going great!</p>
 
@@ -31,6 +32,59 @@
           </div>
         </b-alert>
 
+        <div class="my-4" role="tablist">
+          <div class="mb-2">
+            <b-button @click="toggleLog()" variant="info" size="sm" role="tab">🧾 View Log</b-button>
+            <b-button @click="toggleConfig()" variant="info" size="sm" role="tab">🎛 View Config</b-button>
+            <b-button @click="toggleStats()" variant="info" size="sm" role="tab">📊 Stats</b-button>
+          </div>
+
+          <b-collapse v-model="isLogOpen" accordion="info-boxes" role="tabpanel">
+            <b-card header="Last 100 log lines" bg-variant="secondary" text-variant="light" border-variant="info">
+              <pre class="text-light"><code>{{logLines}}</code></pre>
+              <template v-slot:footer>
+                <b-button @click="toggleLog()" block>Close</b-button>
+              </template>
+            </b-card>
+          </b-collapse>
+
+          <b-collapse v-model="isConfigOpen" accordion="info-boxes" role="tabpanel">
+            <b-card header="Current config" bg-variant="secondary" text-variant="light" border-variant="info">
+              <pre class="text-light"><code>{{JSON.stringify(config, null, 2)}}</code></pre>
+              <template v-slot:footer>
+                <b-button @click="toggleConfig()" block>Close</b-button>
+              </template>
+            </b-card>
+          </b-collapse>
+
+          <b-collapse v-model="isStatsOpen" accordion="info-boxes" role="tabpanel">
+            <b-card header="Stats" bg-variant="secondary" text-variant="light" border-variant="info">
+              <b-row no-gutters>
+                <b-col>
+                  <dl>
+                    <dt>Free Heap</dt>
+                    <dd>{{(stats.freeHeap / 1000).toFixed(1)}}K</dd>
+                  </dl>
+                </b-col>
+                <b-col>
+                  <div>
+                    <trend
+                      :data="freeHeapHistory"
+                      :gradient="['#81d264', '#d6f289', '#f6c160']"
+                      auto-draw
+                      smooth
+                      :radius="20"
+                    ></trend>
+                  </div>
+                </b-col>
+              </b-row>
+              <template v-slot:footer>
+                <b-button @click="toggleStats()" block>Close</b-button>
+              </template>
+            </b-card>
+          </b-collapse>
+        </div>
+
         <p>Uptime: {{uptime.format('dd[d] HH:mm:ss', { stopTrim: 'H' })}}</p>
       </b-container>
     </div>
@@ -41,7 +95,12 @@
         data() {
           return {
             config: {},
+            freeHeapHistory: [],
             isLoaded: false,
+            isConfigOpen: false,
+            isLogOpen: false,
+            isStatsOpen: false,
+            logLines: '',
             stats: {},
           };
         },
@@ -63,6 +122,24 @@
           },
         },
         methods: {
+          async toggleConfig() {
+            if (!this.isConfigOpen) {
+              await this.updateConfig();
+            }
+
+            this.isConfigOpen = !this.isConfigOpen;
+          },
+          async toggleLog() {
+            if (!this.isLogOpen) {
+              const response = await fetch('/log');
+              this.logLines = await response.text();
+            }
+
+            this.isLogOpen = !this.isLogOpen;
+          },
+          async toggleStats() {
+            this.isStatsOpen = !this.isStatsOpen;
+          },
           async updateConfig() {
             const response = await fetch('/config');
             this.config = await response.json();
@@ -71,7 +148,16 @@
             const response = await fetch('/stats');
             this.stats = await response.json();
           },
-        }
+        },
+        watch: {
+          stats() {
+            // Ring buffer of the last 100 readings
+            this.freeHeapHistory.push(this.stats.freeHeap);
+            if (this.freeHeapHistory.length > 100) {
+              this.freeHeapHistory.shift();
+            }
+          },
+        },
       })
     </script>
   </body>

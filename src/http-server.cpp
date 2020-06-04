@@ -89,10 +89,11 @@ void handleLog() {
 }
 
 void handleStats() {
-  const size_t capacity = JSON_OBJECT_SIZE(2) + sizeof(long) + sizeof(time_t);
+  const size_t capacity = JSON_OBJECT_SIZE(3) + sizeof(uint32_t) + sizeof(long) + sizeof(time_t);
   DynamicJsonDocument doc(capacity);
   String json;
 
+  doc["freeHeap"] = ESP.getFreeHeap();
   doc["millis"] = millis();
   doc["time"] = time(nullptr);
 
