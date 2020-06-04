@@ -1,9 +1,3 @@
-#include <MFRC522.h>
-#include <SPI.h>
-
-#define RST_PIN D1
-#define SS_PIN D2
-
 void nfcInit();
 void nfcDumpVersionToSerial();
 void nfcDumpCardInfoToSerial();

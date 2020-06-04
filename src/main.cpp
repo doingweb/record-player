@@ -33,8 +33,6 @@ void loop() {
 		return;
 	}
 
-	// nfcDumpCardInfoToSerial();
-
   String uid = getCardUid();
   logger::log(uid);
 
