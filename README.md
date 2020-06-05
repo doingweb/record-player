@@ -11,7 +11,7 @@ TODO
 - [X] Refresh access token and retry if it's expired
 - [X] Show errors via web
   - [X] Last command/response from Spotify (+ date/time/etc.)
-- [ ] Read album ID from NFC tag
+- [X] Read album ID from NFC tag
 - [ ] If it's already playing, don't restart
 - [ ] Support changing devices via web (dropdown?)
 - [ ] More web-based configuration in general?

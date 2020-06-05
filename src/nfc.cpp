@@ -5,7 +5,7 @@
 #define RST_PIN D1
 #define SS_PIN D2
 
-String getAlbumUrlFromCard();
+String getUrlFromCard();
 String getAlbumIdFromUrl(String url);
 MFRC522::StatusCode readDataFromCard(byte blockAddr, byte *buffer, byte *bufferSize);
 
@@ -58,15 +58,22 @@ String getCardUid() {
 }
 
 String getAlbumId() {
-  String albumUrl = getAlbumUrlFromCard();
-  if (albumUrl == "") {
+  String url = getUrlFromCard();
+  if (url == "") {
+    logger::log(F("Unable to get URL from card."));
     return "";
   }
 
-  return getAlbumIdFromUrl(albumUrl);
+  logger::log("Found URL: \"" + url + F("\"."));
+
+  String albumId = getAlbumIdFromUrl(url);
+
+  logger::log("Found Album ID: \"" + albumId + F("\"."));
+
+  return albumId;
 }
 
-String getAlbumUrlFromCard() {
+String getUrlFromCard() {
   /*
   Example NDEF Message read
 
@@ -156,9 +163,23 @@ String getAlbumUrlFromCard() {
 }
 
 String getAlbumIdFromUrl(String url) {
-  // TODO: Implement
-  logger::log("Got album URL: \"" + url + "\"");
-  return "";
+  const char * urlTokens = "/?";
+
+  char urlCopy[url.length()];
+  url.toCharArray(urlCopy, url.length());
+
+  char * hostname = strtok(urlCopy, urlTokens);
+  char * albumPathSegment = strtok(NULL, urlTokens);
+  char * albumId = strtok(NULL, urlTokens);
+
+  if (!(
+    strcmp(hostname, "open.spotify.com") == 0 &&
+    strcmp(albumPathSegment, "album") == 0
+  )) {
+    return "";
+  }
+
+  return albumId;
 }
 
 MFRC522::StatusCode readDataFromCard(byte pageset, byte *buffer, byte *bufferSize) {
