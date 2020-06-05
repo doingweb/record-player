@@ -5,6 +5,9 @@
 #include "spotify.h"
 #include "../config.h"
 
+// Tried to issue an API request without an access token
+#define API_REQUEST_CANCELED_NO_TOKEN -1
+
 // CN: *.spotify.com
 const char certSha1Fingerprint[] PROGMEM = "AB BC 7C 9B 7A D8 5D 98 8B B2 72 A4 4C 13 47 9A 00 2F 70 B5";
 
@@ -33,10 +36,10 @@ void playAlbum(String id) {
 
   int status = sendRequest("PUT", path, payload);
 
-  if (status == HTTP_CODE_UNAUTHORIZED || status == HTTP_CODE_BAD_REQUEST) {
+  if (status == HTTP_CODE_UNAUTHORIZED) {
     logger::log("Access token did not work. Getting a new one and trying again.");
     refreshAccessToken();
-    status = sendRequest("PUT", path, payload);
+    sendRequest("PUT", path, payload);
   }
 
   // Log if it happens again?
@@ -161,7 +164,7 @@ int sendRequest(String method, String path) {
 int sendRequest(String method, String path, String payload) {
   if (accessToken.isEmpty()) {
     logger::log("Cancelling API request: No access token set.");
-    return -1;
+    return API_REQUEST_CANCELED_NO_TOKEN;
   }
 
   HTTPClient http;
