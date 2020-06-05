@@ -20,6 +20,7 @@ void updateTokensViaAuthCode();
 void refreshAccessToken();
 String requestApiTokens(String payload);
 void extractTokens(String);
+void clearTokens();
 int sendRequest(String, String);
 int sendRequest(String, String, String);
 
@@ -147,14 +148,19 @@ void extractTokens(String json) {
   int expiresIn = doc["expires_in"];
 
   if (expiresIn == 0) {
-    logger::log("No token expiration: Probably something really wrong. Throwing out tokens and starting over.");
-    accessToken = "";
-    refreshToken = "";
-    accessTokenExpiration = 0;
+    logger::log("No token expiration: Probably something really wrong. Clearing tokens. Please reauthorize.");
+    clearTokens();
     return;
   }
 
   accessTokenExpiration = time(nullptr) + expiresIn;
+}
+
+void clearTokens() {
+  accessToken = "";
+  accessTokenExpiration = 0;
+  authorizationCode = "";
+  refreshToken = "";
 }
 
 int sendRequest(String method, String path) {
