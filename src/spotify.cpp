@@ -28,8 +28,6 @@ int oauthXssState = 0;
 time_t accessTokenExpiration = 0;
 
 void playAlbum(String id) {
-  logger::log("Playing album " + id + ".");
-
   const String path = (String)"/v1/me/player/play?device_id=" + DEVICE_ID;
   String payload = "{\"context_uri\":\"spotify:album:" + id + "\"}";
 
@@ -115,12 +113,12 @@ String requestApiTokens(String payload) {
   http.setAuthorization(CLIENT_ID, CLIENT_SECRET);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   int httpResponseCode = http.POST(payload);
-  String response = http.getString();
+  String responseBody = http.getString();
   http.end();
 
   logger::log("Token API HTTP status: " + String(httpResponseCode, DEC));
 
-  return response;
+  return responseBody;
 }
 
 /**
@@ -162,7 +160,7 @@ int sendRequest(String method, String path) {
 
 int sendRequest(String method, String path, String payload) {
   if (accessToken.isEmpty()) {
-    logger::log("Cancelling request: No access token set.");
+    logger::log("Cancelling API request: No access token set.");
     return -1;
   }
 
@@ -182,9 +180,9 @@ int sendRequest(String method, String path, String payload) {
   int httpResponseCode = http.sendRequest(method.c_str(), payload);
 
   // Barf it out for debugging purposes
-  logger::log(String(httpResponseCode, DEC));
-  String response = http.getString();
-  logger::log(response);
+  logger::log(String(httpResponseCode, DEC) + F(" 🌎 ") + method + F(" ") + path);
+  String responseBody = http.getString();
+  logger::log(responseBody);
 
   http.end();
 

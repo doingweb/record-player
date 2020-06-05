@@ -17,6 +17,8 @@ void setup() {
 
   nfcDumpVersionToSerial();
 
+  logger::log(String(F("Free Heap: ")) + String(ESP.getFreeHeap(), DEC));
+
 	logger::log(F("Ready to play some records! 🔊"));
 }
 
@@ -34,14 +36,14 @@ void loop() {
 	}
 
   String uid = getCardUid();
-  logger::log(uid);
+  logger::log(String(F("Scanned ")) + uid);
 
   String albumId = getAlbumId();
 
   if (albumId != "") {
     playAlbum(albumId);
   } else {
-    logger::log("Unrecognized album.");
+    logger::log(F("Not playing: Unable to determine album ID."));
   }
 
   // Keeps from reading the same card over and over again
