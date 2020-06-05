@@ -12,6 +12,7 @@ TODO
 - [X] Show errors via web
   - [X] Last command/response from Spotify (+ date/time/etc.)
 - [X] Read album ID from NFC tag
+- [X] More emojis in log messages
 - [ ] If it's already playing, don't restart
 - [ ] Support changing devices via web (dropdown?)
 - [ ] More web-based configuration in general?

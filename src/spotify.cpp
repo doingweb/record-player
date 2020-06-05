@@ -40,10 +40,13 @@ void playAlbum(String id) {
   if (status == HTTP_CODE_UNAUTHORIZED) {
     logger::log("Access token did not work. Getting a new one and trying again.");
     refreshAccessToken();
-    sendRequest("PUT", path, payload);
+    status = sendRequest("PUT", path, payload);
+    // Log if it happens again?
   }
 
-  // Log if it happens again?
+  if (status == HTTP_CODE_NO_CONTENT) {
+    logger::log(F("▶️ Playing album!"));
+  }
 }
 
 String getAuthorizeUrl() {
@@ -91,7 +94,7 @@ void updateTokensViaAuthCode() {
     return;
   }
 
-  logger::log("Updating access tokens using auth code: " + authorizationCode);
+  logger::log("Using auth code to get access tokens.");
 
   String payload = "grant_type=authorization_code&code=" + authorizationCode + "&redirect_uri=" + encodedRedirectUri();
   extractTokens(requestApiTokens(payload));
@@ -120,7 +123,7 @@ String requestApiTokens(String payload) {
   String responseBody = http.getString();
   http.end();
 
-  logger::log("Token API HTTP status: " + String(httpResponseCode, DEC));
+  logger::log(String(httpResponseCode, DEC) + F(" 🌎 POST /api/token"));
 
   return responseBody;
 }
@@ -137,7 +140,7 @@ void extractTokens(String json) {
     return;
   }
 
-  logger::log("Received JSON from token API: " + json);
+  logger::log("🔑 " + json);
 
   accessToken = doc["access_token"].isNull() ? "" : doc["access_token"].as<String>();
 
@@ -148,7 +151,7 @@ void extractTokens(String json) {
   int expiresIn = doc["expires_in"];
 
   if (expiresIn == 0) {
-    logger::log("No token expiration: Probably something really wrong. Clearing tokens. Please reauthorize.");
+    logger::log("😨 No token expiration: Probably something really wrong. Clearing tokens. Please reauthorize.");
     clearTokens();
     return;
   }
@@ -191,7 +194,9 @@ int sendRequest(String method, String path, String payload) {
   // Barf it out for debugging purposes
   logger::log(String(httpResponseCode, DEC) + F(" 🌎 ") + method + F(" ") + path);
   String responseBody = http.getString();
-  logger::log(responseBody);
+  if (!responseBody.isEmpty()) {
+    logger::log(responseBody);
+  }
 
   http.end();
 

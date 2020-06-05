@@ -36,14 +36,14 @@ void loop() {
 	}
 
   String uid = getCardUid();
-  logger::log(String(F("Scanned ")) + uid);
+  logger::log(String(F("💿 Scanned ")) + uid);
 
   String albumId = getAlbumId();
 
   if (albumId != "") {
     playAlbum(albumId);
   } else {
-    logger::log(F("Not playing: Unable to determine album ID."));
+    logger::log(F("⏹ Not playing: Unable to determine album ID."));
   }
 
   // Keeps from reading the same card over and over again
