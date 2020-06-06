@@ -119,11 +119,15 @@ String requestApiTokens(String payload) {
   http.begin(client, "https://accounts.spotify.com/api/token");
   http.setAuthorization(CLIENT_ID, CLIENT_SECRET);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  http.addHeader("Connection", "close");
   int httpResponseCode = http.POST(payload);
   String responseBody = http.getString();
   http.end();
 
   logger::log(String(httpResponseCode, DEC) + F(" 🌎 POST /api/token"));
+  if (httpResponseCode < 0) {
+    logger::log(String(F("⛔️ ")) + HTTPClient::errorToString(httpResponseCode));
+  }
 
   return responseBody;
 }
