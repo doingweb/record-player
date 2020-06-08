@@ -13,7 +13,7 @@ TODO
   - [X] Last command/response from Spotify (+ date/time/etc.)
 - [X] Read album ID from NFC tag
 - [X] More emojis in log messages
-- [ ] If it's already playing, don't restart
+- [X] If it's already playing, don't restart
 - [ ] Move config to /data/config.json (see https://arduinojson.org/v6/example/config/)
   - [X] Write (refresh) token info there so maybe we don't have to re-authorize every time we unplug it
 - [ ] Support changing devices via web (dropdown?)

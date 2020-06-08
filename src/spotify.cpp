@@ -7,13 +7,19 @@
 #include "../config.h"
 
 // Tried to issue an API request without an access token
-#define API_REQUEST_CANCELED_NO_TOKEN -1
+#define API_REQUEST_CANCELED_NO_TOKEN -100
 
 // CN: *.spotify.com
 const char certSha1Fingerprint[] PROGMEM = "AB BC 7C 9B 7A D8 5D 98 8B B2 72 A4 4C 13 47 9A 00 2F 70 B5";
 
 // The OAuth scopes needed to do stuff
 // "user-read-playback-state", "user-modify-playback-state"
+
+struct httpResponse
+{
+  int statusCode;
+  String body;
+};
 
 WiFiClientSecure getClient();
 String encodedRedirectUri();
@@ -22,8 +28,8 @@ void refreshAccessToken();
 String requestApiTokens(String payload);
 void extractTokens(String);
 void clearTokens();
-int sendRequest(String, String);
-int sendRequest(String, String, String);
+httpResponse sendApiRequest(String, String);
+httpResponse sendApiRequest(String, String, String);
 
 // OAuth stuff
 String authorizationCode = "";
@@ -31,20 +37,58 @@ String accessToken = "";
 int oauthXssState = 0;
 time_t accessTokenExpiration = 0;
 
+bool isAlreadyPlaying(String id) {
+  // https://api.spotify.com/v1/me/player/currently-playing
+  // https://developer.spotify.com/console/get-users-currently-playing-track/
+  // Something like `responseJson.context.uri == "spotify:album:" + albumId`?
+  httpResponse response = sendApiRequest("GET", "/v1/me/player/currently-playing");
+
+  if (response.statusCode == HTTP_CODE_NO_CONTENT) {
+    // Nothing is playing
+    return false;
+  }
+
+  if (response.statusCode != HTTP_CODE_OK) {
+    logger::log("Not sure if it's already playing... Let's assume not.");
+    return false;
+  }
+
+  DynamicJsonDocument doc(6144);
+  deserializeJson(doc, response.body);
+
+  Serial.println("response.body: " + response.body);
+  Serial.println("Currently playing doc is taking up: " + String(doc.memoryUsage(), DEC));
+
+  if (!doc["is_playing"]) {
+    // There's a context, but it's paused
+    Serial.println(F("There's a context, but it's paused."));
+    return false;
+  }
+
+  String contextUri = !doc["context"].isNull() && !doc["context"]["uri"].isNull() ? doc["context"]["uri"].as<String>() : "";
+  if (contextUri != "") {
+    logger::log("Currently playing context URI: " + contextUri);
+  } else {
+    logger::log("Context was empty");
+  }
+
+  return contextUri == "spotify:album:" + id;
+}
+
 void playAlbum(String id) {
   const String path = (String)"/v1/me/player/play?device_id=" + DEVICE_ID;
   String payload = "{\"context_uri\":\"spotify:album:" + id + "\"}";
 
-  int status = sendRequest("PUT", path, payload);
+  httpResponse response = sendApiRequest("PUT", path, payload);
 
-  if (status == HTTP_CODE_UNAUTHORIZED) {
+  if (response.statusCode == HTTP_CODE_UNAUTHORIZED) {
     logger::log("Access token did not work. Getting a new one and trying again.");
     refreshAccessToken();
-    status = sendRequest("PUT", path, payload);
+    response = sendApiRequest("PUT", path, payload);
     // Log if it happens again?
   }
 
-  if (status == HTTP_CODE_NO_CONTENT) {
+  if (response.statusCode == HTTP_CODE_NO_CONTENT) {
     logger::log(F("▶️ Playing album!"));
   }
 }
@@ -172,14 +216,20 @@ void clearTokens() {
   saveConfig();
 }
 
-int sendRequest(String method, String path) {
-  return sendRequest(method, path, "");
+httpResponse sendApiRequest(String method, String path) {
+  return sendApiRequest(method, path, "");
 }
 
-int sendRequest(String method, String path, String payload) {
+
+httpResponse sendApiRequest(String method, String path, String payload) {
+  const size_t sslErrorSize = 500;
+  char sslError[sslErrorSize]; // Longest in WiFiClientSecureBearSSL.cpp is 315.
+  httpResponse response;
+
   if (accessToken.isEmpty()) {
     logger::log("Cancelling API request: No access token set.");
-    return API_REQUEST_CANCELED_NO_TOKEN;
+    response.statusCode = API_REQUEST_CANCELED_NO_TOKEN;
+    return response;
   }
 
   HTTPClient http;
@@ -189,24 +239,36 @@ int sendRequest(String method, String path, String payload) {
 
   http.begin(client, url);
   http.addHeader("Accept", "application/json");
-  http.addHeader("Content-Type", "application/json");
   http.addHeader("Connection", "close");
   http.addHeader("Authorization", (String)"Bearer " + accessToken);
-  http.addHeader("Content-Length", String(payload.length()));
+
+  if (!payload.isEmpty()) {
+    http.addHeader("Content-Type", "application/json");
+  }
 
   // Send the request
   int httpResponseCode = http.sendRequest(method.c_str(), payload);
 
   // Barf it out for debugging purposes
   logger::log(String(httpResponseCode, DEC) + F(" 🌎 ") + method + F(" ") + path);
-  String responseBody = http.getString();
-  if (!responseBody.isEmpty()) {
-    logger::log(responseBody);
+  if (httpResponseCode < 0) {
+    logger::log("⛔️ HTTP Error: " + HTTPClient::errorToString(httpResponseCode));
+
+    int sslErrorCode = client.getLastSSLError(sslError, sslErrorSize);
+    logger::log("🔒 SSL Error (?) " + String(sslErrorCode, DEC) + F(": ") + sslError);
   }
+
+  String responseBody = http.getString();
+  // if (!responseBody.isEmpty()) {
+  //   logger::log(responseBody);
+  // }
 
   http.end();
 
-  return httpResponseCode;
+  response.statusCode = httpResponseCode;
+  response.body = responseBody;
+
+  return response;
 }
 
 WiFiClientSecure getClient() {

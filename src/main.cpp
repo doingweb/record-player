@@ -47,7 +47,11 @@ void loop() {
   String albumId = getAlbumId();
 
   if (albumId != "") {
-    playAlbum(albumId);
+    if (isAlreadyPlaying(albumId)) {
+      logger::log("This album is already playing.");
+    } else {
+      playAlbum(albumId);
+    }
   } else {
     logger::log(F("⏹ Not playing: Unable to determine album ID."));
   }

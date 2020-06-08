@@ -4,6 +4,7 @@ extern String authorizationCode;
 extern String accessToken;
 extern time_t accessTokenExpiration;
 
+bool isAlreadyPlaying(String id);
 void playAlbum(String id);
 
 String getAuthorizeUrl();
