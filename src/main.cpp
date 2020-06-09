@@ -1,4 +1,5 @@
 #include <FS.h>
+#include "config.h"
 #include "http-server.h"
 #include "logger.h"
 #include "nfc.h"
@@ -18,6 +19,11 @@ void setup() {
   nfcDumpVersionToSerial();
 
   logger::log(String(F("Free Heap: ")) + String(ESP.getFreeHeap(), DEC));
+
+  initializeConfig();
+  if (refreshToken != "") {
+    refreshAccessToken();
+  }
 
 	logger::log(F("Ready to play some records! 🔊"));
 }

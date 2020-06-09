@@ -3,6 +3,7 @@
 #include <ESP8266WiFi.h>
 #include "logger.h"
 #include "spotify.h"
+#include "config.h"
 #include "../config.h"
 
 // Tried to issue an API request without an access token
@@ -27,7 +28,6 @@ int sendRequest(String, String, String);
 // OAuth stuff
 String authorizationCode = "";
 String accessToken = "";
-String refreshToken = ""; // TODO: Write to a file?
 int oauthXssState = 0;
 time_t accessTokenExpiration = 0;
 
@@ -150,6 +150,7 @@ void extractTokens(String json) {
 
   if (!doc["refresh_token"].isNull()) {
     refreshToken = doc["refresh_token"].as<String>();
+    saveConfig();
   }
 
   int expiresIn = doc["expires_in"];
@@ -168,6 +169,7 @@ void clearTokens() {
   accessTokenExpiration = 0;
   authorizationCode = "";
   refreshToken = "";
+  saveConfig();
 }
 
 int sendRequest(String method, String path) {

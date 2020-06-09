@@ -6,4 +6,4 @@
 .vscode/ipch
 
 # Copy yours from config.h.TEMPLATE
-config.h
+/config.h

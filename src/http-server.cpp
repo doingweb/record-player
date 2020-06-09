@@ -5,6 +5,7 @@
 #include "http-server.h"
 #include "logger.h"
 #include "spotify.h"
+#include "config.h"
 #include "../config.h"
 
 ESP8266WebServer server(80);
