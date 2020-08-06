@@ -1,0 +1,13 @@
+{
+  "ssid": "",
+  "password": "",
+  "hostname": "",
+
+  "spotify": {
+    "clientId": "",
+    "clientSecret": "",
+    "devices": [
+      { "name": "", "id": "" }
+    ]
+  }
+}

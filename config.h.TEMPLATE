@@ -1,9 +1,0 @@
-// WiFi
-#define SSID ""
-#define PASSWORD ""
-#define HOSTNAME ""
-
-// Spotify
-#define CLIENT_ID ""
-#define CLIENT_SECRET ""
-#define DEVICE_ID ""
