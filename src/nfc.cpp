@@ -6,7 +6,6 @@
 #define SS_PIN D2
 
 String getUrlFromCard();
-String getAlbumIdFromUrl(String url);
 MFRC522::StatusCode readDataFromCard(byte blockAddr, byte *buffer, byte *bufferSize);
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
@@ -36,7 +35,6 @@ void haltNfc() {
   mfrc522.PICC_HaltA();
 }
 
-// TODO: We really need this?
 /**
  * Convert UID read from card to printable string
  */
@@ -57,22 +55,6 @@ String getCardUid() {
   return getUidString(mfrc522.uid.uidByte, mfrc522.uid.size);
 }
 
-String getAlbumId() {
-  String url = getUrlFromCard();
-  if (url == "") {
-    logger::log(F("Unable to get URL from card."));
-    return "";
-  }
-
-  logger::log("Found URL: \"" + url + F("\"."));
-
-  String albumId = getAlbumIdFromUrl(url);
-
-  logger::log("Found Album ID: \"" + albumId + F("\"."));
-
-  return albumId;
-}
-
 String getUrlFromCard() {
   /*
   Example NDEF Message read
@@ -85,9 +67,9 @@ String getUrlFromCard() {
   51 63 6D 73 3F 73 69 3D 6A 34 31 64 43 65 6B 4B
   54 43 36 63 63 55 66 55 4E 33 48 6F 34 51 FE 00
 
-  ....HU.open.spotify.com/album/1T4mzkOVP902MC6fc0Qcms?si=j41dCekKTC6ccUfUN3Ho4Q..
+  ....HU.open.spotify.com/album/6ZB8qaR9JNuS0Q0bG1nbcH?si=ikNSerLMRQC6_19tyncGHw..
 
-  Album is Funeral by The Arcade Fire.
+  Album is Funeral by Arcade Fire.
 
   Organized as a "TLV" block - Type, Length, Value.
 
@@ -160,26 +142,6 @@ String getUrlFromCard() {
   }
 
   return url;
-}
-
-String getAlbumIdFromUrl(String url) {
-  const char * urlTokens = "/?";
-
-  char urlCopy[url.length()];
-  url.toCharArray(urlCopy, url.length());
-
-  char * hostname = strtok(urlCopy, urlTokens);
-  char * albumPathSegment = strtok(NULL, urlTokens);
-  char * albumId = strtok(NULL, urlTokens);
-
-  if (!(
-    strcmp(hostname, "open.spotify.com") == 0 &&
-    strcmp(albumPathSegment, "album") == 0
-  )) {
-    return "";
-  }
-
-  return albumId;
 }
 
 MFRC522::StatusCode readDataFromCard(byte pageset, byte *buffer, byte *bufferSize) {

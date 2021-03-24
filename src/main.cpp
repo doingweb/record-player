@@ -1,9 +1,8 @@
-#include <FS.h>
+#include <LittleFS.h>
 #include "config.h"
 #include "http-server.h"
 #include "logger.h"
 #include "nfc.h"
-#include "spotify.h"
 #include "wifi.h"
 
 void setup() {
@@ -12,7 +11,7 @@ void setup() {
 
   startWifi();
 
-  SPIFFS.begin();
+  LittleFS.begin();
 
   startHttpServer();
 
@@ -20,18 +19,12 @@ void setup() {
 
   logger::log(String(F("Free Heap: ")) + String(ESP.getFreeHeap(), DEC));
 
-  initializeConfig();
-  if (refreshToken != "") {
-    refreshAccessToken();
-  }
-
 	logger::log(F("Ready to play some records! 🔊"));
 }
 
 void loop() {
   updateDns();
   handleHttpClient();
-  maintainAccessToken();
 
 	if (!isNewCardPresent()) {
 		return;
@@ -44,13 +37,16 @@ void loop() {
   String uid = getCardUid();
   logger::log(String(F("💿 Scanned ")) + uid);
 
-  String albumId = getAlbumId();
-
-  if (albumId != "") {
-    playAlbum(albumId);
-  } else {
-    logger::log(F("⏹ Not playing: Unable to determine album ID."));
+  String url = getUrlFromCard();
+  if (url == "") {
+    logger::log(F("Unable to get URL from card."));
+    haltNfc();
+    return;
   }
+
+  logger::log("Found URL: \"" + url + F("\"."));
+
+  // TODO: Publish the URL to MQTT
 
   // Keeps from reading the same card over and over again
   haltNfc();

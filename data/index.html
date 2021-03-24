@@ -24,18 +24,9 @@
 
         <p v-if="shouldBeWorking">Everything is going great!</p>
 
-        <b-alert v-if="isLoaded && !config.accessToken" show variant="warning">
-          <h2 class="alert-heading">Missing access token</h2>
-          <p>We couldn't get an access token from Spotify for some reason. Please re-authorize.</p>
-          <div class="text-right">
-            <b-button href="/auth" variant="primary">Authorize</b-button>
-          </div>
-        </b-alert>
-
         <div class="my-4" role="tablist">
           <div class="mb-2">
             <b-button @click="toggleLog()" variant="info" size="sm" role="tab">🧾 View Log</b-button>
-            <b-button @click="toggleConfig()" variant="info" size="sm" role="tab">🎛 View Config</b-button>
             <b-button @click="toggleStats()" variant="info" size="sm" role="tab">📊 Stats</b-button>
           </div>
 
@@ -44,15 +35,6 @@
               <pre class="text-light"><code>{{logLines}}</code></pre>
               <template v-slot:footer>
                 <b-button @click="toggleLog()" block>Close</b-button>
-              </template>
-            </b-card>
-          </b-collapse>
-
-          <b-collapse v-model="isConfigOpen" accordion="info-boxes" role="tabpanel">
-            <b-card header="Current config" bg-variant="secondary" text-variant="light" border-variant="info">
-              <pre class="text-light"><code>{{JSON.stringify(config, null, 2)}}</code></pre>
-              <template v-slot:footer>
-                <b-button @click="toggleConfig()" block>Close</b-button>
               </template>
             </b-card>
           </b-collapse>
@@ -94,10 +76,8 @@
         el: '#app',
         data() {
           return {
-            config: {},
             freeHeapHistory: [],
             isLoaded: false,
-            isConfigOpen: false,
             isLogOpen: false,
             isStatsOpen: false,
             logLines: '',
@@ -106,7 +86,6 @@
         },
         async created() {
           await Promise.all([
-            this.updateConfig(),
             this.updateStats(),
           ]);
           this.isLoaded = true;
@@ -115,20 +94,14 @@
         },
         computed: {
           shouldBeWorking() {
-            return !!this.config.accessToken;
+            // TODO: What indicators do we have?
+            return true;
           },
           uptime() {
             return moment.duration(this.stats.time, 'seconds');
           },
         },
         methods: {
-          async toggleConfig() {
-            if (!this.isConfigOpen) {
-              await this.updateConfig();
-            }
-
-            this.isConfigOpen = !this.isConfigOpen;
-          },
           async toggleLog() {
             if (!this.isLogOpen) {
               const response = await fetch('/log');
@@ -139,10 +112,6 @@
           },
           async toggleStats() {
             this.isStatsOpen = !this.isStatsOpen;
-          },
-          async updateConfig() {
-            const response = await fetch('/config');
-            this.config = await response.json();
           },
           async updateStats() {
             const response = await fetch('/stats');
