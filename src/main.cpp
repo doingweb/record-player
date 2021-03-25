@@ -2,6 +2,7 @@
 #include "config.h"
 #include "http-server.h"
 #include "logger.h"
+#include "mqtt.h"
 #include "nfc.h"
 #include "wifi.h"
 
@@ -17,6 +18,8 @@ void setup() {
 
   nfcDumpVersionToSerial();
 
+  mqtt::setup();
+
   logger::log(String(F("Free Heap: ")) + String(ESP.getFreeHeap(), DEC));
 
 	logger::log(F("Ready to play some records! 🔊"));
@@ -25,6 +28,7 @@ void setup() {
 void loop() {
   updateDns();
   handleHttpClient();
+  mqtt::loop();
 
 	if (!isNewCardPresent()) {
 		return;
@@ -46,7 +50,9 @@ void loop() {
 
   logger::log("Found URL: \"" + url + F("\"."));
 
-  // TODO: Publish the URL to MQTT
+  mqtt::publish(url.c_str());
+
+  logger::log(F("▶️ Published to MQTT!"));
 
   // Keeps from reading the same card over and over again
   haltNfc();
