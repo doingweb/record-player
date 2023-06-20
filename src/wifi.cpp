@@ -7,7 +7,7 @@
 
 void startWifi() {
   WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASSWORD);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   Serial.println("");
 
@@ -19,7 +19,7 @@ void startWifi() {
   }
 
   Serial.println("");
-  logger::log("Connected to " + String(SSID));
+  logger::log("Connected to " + String(WIFI_SSID));
   logger::log("IP address: " + WiFi.localIP().toString());
 
   if (MDNS.begin(HOSTNAME)) {

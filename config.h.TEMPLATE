@@ -1,4 +1,4 @@
 // WiFi
-#define SSID ""
-#define PASSWORD ""
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 #define HOSTNAME ""
