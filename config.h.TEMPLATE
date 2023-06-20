@@ -1,4 +1,13 @@
+#define HOSTNAME ""
+
 // WiFi
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
-#define HOSTNAME ""
+
+// MQTT
+#define MQTT_BROKER ""
+#define MQTT_PORT 1883
+#define MQTT_CLIENT_ID ""
+#define MQTT_TOPIC ""
+#define MQTT_USER ""
+#define MQTT_PASSWORD ""
