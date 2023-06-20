@@ -1,3 +1,4 @@
+#define TZ ""
 #define HOSTNAME ""
 
 // WiFi
@@ -11,3 +12,5 @@
 #define MQTT_TOPIC ""
 #define MQTT_USER ""
 #define MQTT_PASSWORD ""
+
+const char* ca_cert PROGMEM = ""

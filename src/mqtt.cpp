@@ -1,22 +1,28 @@
 #include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include "logger.h"
 #include "../config.h"
 
-WiFiClient wifiClient;
+WiFiClientSecure wifiClient;
 PubSubClient mqttClient(wifiClient);
 
-void reconnect();
+static const char ca_cert[] PROGMEM = CA_CERT;
+X509List certs(ca_cert);
+
+void reconnectMqtt();
 
 namespace mqtt {
   void setup() {
-    mqttClient.setServer(MQTT_BROKER, 1883);
+    wifiClient.setTrustAnchors(&certs);
+    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   }
 
   void loop() {
     if (!mqttClient.connected()) {
-      reconnect();
+      reconnectMqtt();
     }
+
     mqttClient.loop();
   }
 
@@ -25,17 +31,16 @@ namespace mqtt {
   }
 }
 
-void reconnect() {
+void reconnectMqtt() {
   logger::log(F("Attempting MQTT connection..."));
-  const char* clientId = "record-player";
 
   while (!mqttClient.connected()) {
-    if (mqttClient.connect(clientId)) {
+    if (mqttClient.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASSWORD)) {
       break;
     }
 
     logger::log(
-      String(F("Connect failed with state ")) +
+      String(F("Connect failed. MQTT client state: ")) +
       String(mqttClient.state(), DEC) +
       String(F(" - trying again in 5 seconds"))
     );
